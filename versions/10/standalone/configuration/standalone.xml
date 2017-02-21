@@ -96,14 +96,15 @@
                     <named-formatter name="COLOR-PATTERN"/>
                 </formatter>
             </console-handler>
-            <periodic-rotating-file-handler name="FILE" autoflush="true">
+            <size-rotating-file-handler name="FILE" autoflush="true">
                 <formatter>
                     <named-formatter name="PATTERN"/>
                 </formatter>
                 <file relative-to="jboss.server.log.dir" path="server.log"/>
-                <suffix value=".yyyy-MM-dd"/>
+                <rotate-size value="1024K"/>
+                <max-backup-index value="9"/>
                 <append value="true"/>
-            </periodic-rotating-file-handler>
+            </size-rotating-file-handler>
             <logger category="com.arjuna">
                 <level name="WARN"/>
             </logger>
@@ -160,7 +161,6 @@
                         <check-valid-connection-sql>SELECT 1</check-valid-connection-sql>
                         <background-validation>true</background-validation>
                         <background-validation-millis>60000</background-validation-millis>
-                        <!--<validate-on-match>true</validate-on-match>-->
                     </validation>
                     <pool>
                         <flush-strategy>IdleConnections</flush-strategy>
@@ -177,7 +177,6 @@
                         <check-valid-connection-sql>SELECT 1</check-valid-connection-sql>
                         <background-validation>true</background-validation>
                         <background-validation-millis>60000</background-validation-millis>
-                        <!--<validate-on-match>true</validate-on-match>-->
                     </validation>
                     <pool>
                         <flush-strategy>IdleConnections</flush-strategy>
@@ -240,7 +239,7 @@
                 <cache name="distributable" passivation-store-ref="infinispan" aliases="passivating clustered"/>
             </caches>
             <passivation-stores>
-                <passivation-store name="infinispan" cache-container="ejb" max-size="10000"/>
+                <passivation-store name="infinispan" cache-container="ejb" max-size="8000"/>
             </passivation-stores>
             <async thread-pool-name="default"/>
             <timer-service thread-pool-name="default" default-data-store="default-file-store">
@@ -314,15 +313,15 @@
             <bean-validation enabled="true"/>
             <default-workmanager>
                 <short-running-threads>
-                    <core-threads count="50"/>
-                    <queue-length count="50"/>
-                    <max-threads count="50"/>
+                    <core-threads count="32"/>
+                    <queue-length count="32"/>
+                    <max-threads count="32"/>
                     <keepalive-time time="10" unit="seconds"/>
                 </short-running-threads>
                 <long-running-threads>
-                    <core-threads count="50"/>
-                    <queue-length count="50"/>
-                    <max-threads count="50"/>
+                    <core-threads count="32"/>
+                    <queue-length count="32"/>
+                    <max-threads count="32"/>
                     <keepalive-time time="10" unit="seconds"/>
                 </long-running-threads>
             </default-workmanager>
@@ -478,7 +477,8 @@
                 <host name="default-host" alias="localhost">
                     <location name="/" handler="welcome-content"/>
                     <filter-ref name="server-header"/>
-                    <filter-ref name="x-powered-by-header"/>
+                    <filter-ref name="gzipFilter" predicate="exists['%{o,Content-Type}'] and regex[pattern='(?:application/javascript|text/css|text/html|text/javascript|text/xml|application/json)(;.*)?', value=%{o,Content-Type}, full-match=true]"/>
+                    <filter-ref name="Vary-header"/>
                 </host>
             </server>
             <servlet-container name="default">
@@ -490,7 +490,8 @@
             </handlers>
             <filters>
                 <response-header name="server-header" header-name="Server" header-value="WildFly/10"/>
-                <response-header name="x-powered-by-header" header-name="X-Powered-By" header-value="Undertow/1"/>
+                <response-header name="Vary-header" header-name="Vary" header-value="Accept-Encoding"/>
+                <gzip name="gzipFilter"/>
             </filters>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:webservices:2.0">
